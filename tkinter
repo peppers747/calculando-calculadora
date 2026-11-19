@@ -1,0 +1,56 @@
+import tkinter as tk
+
+def clique_botao(valor):
+    atual = display.get()
+    display.delete(0, tk.END)
+    display.insert(tk.END, atual + valor)
+
+def limpar():
+    display.delete(0, tk.END)
+
+def calcular():
+    try:
+        resultado = eval(display.get())
+        display.delete(0, tk.END)
+        display.insert(tk.END, str(resultado))
+    except Exception:
+        display.delete(0, tk.END)
+        display.insert(tk.END, "Erro")
+
+# Janela principal
+janela = tk.Tk()
+janela.title("Calculadora")
+janela.geometry("380x380")
+janela.resizable(False, False)
+janela.configure(bg="#1e293b")
+
+# Visor
+display = tk.Entry(
+    janela, font=("Arial", 22), justify="right",
+    bd=0, bg="#0f172a", fg="#ffffff", insertbackground="white"
+)
+display.pack(fill="x", padx=15, pady=15, ipady=10)
+
+# Layout dos botões
+botoes = [
+    ('C', limpar, '#ef4444'), ('/', lambda: clique_botao('/'), '#f59e0b'),
+    ('*', lambda: clique_botao('*'), '#f59e0b'), ('-', lambda: clique_botao('-'), '#f59e0b'),
+    ('7', lambda: clique_botao('7'), '#334155'), ('8', lambda: clique_botao('8'), '#334155'),
+    ('9', lambda: clique_botao('9'), '#334155'), ('+', lambda: clique_botao('+'), '#f59e0b'),
+    ('4', lambda: clique_botao('4'), '#334155'), ('5', lambda: clique_botao('5'), '#334155'),
+    ('6', lambda: clique_botao('6'), '#334155'), ('=', calcular, '#10b981'),
+    ('1', lambda: clique_botao('1'), '#334155'), ('2', lambda: clique_botao('2'), '#334155'),
+    ('3', lambda: clique_botao('3'), '#334155'), ('0', lambda: clique_botao('0'), '#334155'),
+]
+
+grid_frame = tk.Frame(janela, bg="#1e293b")
+grid_frame.pack(padx=10, pady=5)
+
+for i, (texto, comando, cor) in enumerate(botoes):
+    btn = tk.Button(
+        grid_frame, text=texto, width=5, height=2, font=("Arial", 14, "bold"),
+        bg=cor, fg="white", activebackground="#475569", bd=0, command=comando
+    )
+    btn.grid(row=i // 4, column=i % 4, padx=5, pady=5)
+
+janela.mainloop()
