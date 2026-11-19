@@ -1,56 +1,167 @@
 import tkinter as tk
+from tkinter import ttk
 
-def clique_botao(valor):
-    atual = display.get()
-    display.delete(0, tk.END)
-    display.insert(tk.END, atual + valor)
+class CalculadoraPro:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Calculadora com Regra de 3")
+        self.root.geometry("340x460")
+        self.root.resizable(False, False)
 
-def limpar():
-    display.delete(0, tk.END)
+        # Abas de navegação
+        notebook = ttk.Notebook(self.root)
+        notebook.pack(fill='both', expand=True)
 
-def calcular():
-    try:
-        resultado = eval(display.get())
-        display.delete(0, tk.END)
-        display.insert(tk.END, str(resultado))
-    except Exception:
-        display.delete(0, tk.END)
-        display.insert(tk.END, "Erro")
+        self.tab_calc = tk.Frame(notebook, bg="#1e293b")
+        self.tab_r3 = tk.Frame(notebook, bg="#1e293b")
 
-# Janela principal
-janela = tk.Tk()
-janela.title("Calculadora")
-janela.geometry("380x380")
-janela.resizable(False, False)
-janela.configure(bg="#1e293b")
+        notebook.add(self.tab_calc, text=" Calculadora ")
+        notebook.add(self.tab_r3, text=" Regra de 3 ")
 
-# Visor
-display = tk.Entry(
-    janela, font=("Arial", 22), justify="right",
-    bd=0, bg="#0f172a", fg="#ffffff", insertbackground="white"
-)
-display.pack(fill="x", padx=15, pady=15, ipady=10)
+        self.montar_calculadora()
+        self.montar_regra_de_tres()
 
-# Layout dos botões
-botoes = [
-    ('C', limpar, '#ef4444'), ('/', lambda: clique_botao('/'), '#f59e0b'),
-    ('*', lambda: clique_botao('*'), '#f59e0b'), ('-', lambda: clique_botao('-'), '#f59e0b'),
-    ('7', lambda: clique_botao('7'), '#334155'), ('8', lambda: clique_botao('8'), '#334155'),
-    ('9', lambda: clique_botao('9'), '#334155'), ('+', lambda: clique_botao('+'), '#f59e0b'),
-    ('4', lambda: clique_botao('4'), '#334155'), ('5', lambda: clique_botao('5'), '#334155'),
-    ('6', lambda: clique_botao('6'), '#334155'), ('=', calcular, '#10b981'),
-    ('1', lambda: clique_botao('1'), '#334155'), ('2', lambda: clique_botao('2'), '#334155'),
-    ('3', lambda: clique_botao('3'), '#334155'), ('0', lambda: clique_botao('0'), '#334155'),
-]
+    # --- ABA CALCULADORA ---
+    def montar_calculadora(self):
+        self.display_var = tk.StringVar(value="0")
+        self.operacao = None
+        self.valor_ant = 0
+        self.reiniciar = False
 
-grid_frame = tk.Frame(janela, bg="#1e293b")
-grid_frame.pack(padx=10, pady=5)
+        visor = tk.Entry(
+            self.tab_calc, textvariable=self.display_var, font=("Arial", 22),
+            justify="right", bd=0, bg="#0f172a", fg="#ffffff", insertbackground="white"
+        )
+        visor.pack(fill="x", padx=14, pady=14, ipady=8)
 
-for i, (texto, comando, cor) in enumerate(botoes):
-    btn = tk.Button(
-        grid_frame, text=texto, width=5, height=2, font=("Arial", 14, "bold"),
-        bg=cor, fg="white", activebackground="#475569", bd=0, command=comando
-    )
-    btn.grid(row=i // 4, column=i % 4, padx=5, pady=5)
+        grid = tk.Frame(self.tab_calc, bg="#1e293b")
+        grid.pack(padx=10, pady=5)
 
-janela.mainloop()
+        botoes = [
+            ('C', self.limpar_calc, '#ef4444'), ('⌫', self.apagar_ultimo, '#334155'),
+            ('÷', lambda: self.definir_op('/'), '#f59e0b'), ('×', lambda: self.definir_op('*'), '#f59e0b'),
+            ('7', lambda: self.digitar('7'), '#334155'), ('8', lambda: self.digitar('8'), '#334155'),
+            ('9', lambda: self.digitar('9'), '#334155'), ('-', lambda: self.definir_op('-'), '#f59e0b'),
+            ('4', lambda: self.digitar('4'), '#334155'), ('5', lambda: self.digitar('5'), '#334155'),
+            ('6', lambda: self.digitar('6'), '#334155'), ('+', lambda: self.definir_op('+'), '#f59e0b'),
+            ('1', lambda: self.digitar('1'), '#334155'), ('2', lambda: self.digitar('2'), '#334155'),
+            ('3', lambda: self.digitar('3'), '#334155'), (',', self.digitar_virgula, '#334155'),
+            ('0', lambda: self.digitar('0'), '#334155'), ('=', self.calcular_calc, '#10b981')
+        ]
+
+        for i, (txt, cmd, cor) in enumerate(botoes):
+            col_span = 2 if txt == '=' else 1
+            w = 11 if col_span == 2 else 5
+            btn = tk.Button(
+                grid, text=txt, width=w, height=2,
+                font=("Arial", 13, "bold"), bg=cor, fg="white", bd=0, command=cmd
+            )
+            btn.grid(row=i // 4, column=i % 4, columnspan=col_span, padx=3, pady=3)
+
+    def digitar(self, num):
+        atual = self.display_var.get()
+        if atual == "0" or self.reiniciar:
+            self.display_var.set(num)
+            self.reiniciar = False
+        else:
+            self.display_var.set(atual + num)
+
+    def digitar_virgula(self):
+        atual = self.display_var.get()
+        if self.reiniciar:
+            self.display_var.set("0,")
+            self.reiniciar = False
+            return
+        if "," not in atual:
+            self.display_var.set(atual + ",")
+
+    def apagar_ultimo(self):
+        atual = self.display_var.get()
+        if len(atual) <= 1:
+            self.display_var.set("0")
+        else:
+            self.display_var.set(atual[:-1])
+
+    def definir_op(self, op):
+        try:
+            self.valor_ant = float(self.display_var.get().replace(",", "."))
+        except ValueError:
+            self.valor_ant = 0
+        self.operacao = op
+        self.reiniciar = True
+
+    def calcular_calc(self):
+        if not self.operacao:
+            return
+        try:
+            val_atual = float(self.display_var.get().replace(",", "."))
+            if self.operacao == '+': res = self.valor_ant + val_atual
+            elif self.operacao == '-': res = self.valor_ant - val_atual
+            elif self.operacao == '*': res = self.valor_ant * val_atual
+            elif self.operacao == '/':
+                if val_atual == 0:
+                    self.display_var.set("Erro (Div / 0)")
+                    self.reiniciar = True
+                    return
+                res = self.valor_ant / val_atual
+            
+            str_res = str(int(res)) if res.is_integer() else f"{res:.4f}".rstrip('0').rstrip('.')
+            self.display_var.set(str_res.replace(".", ","))
+            self.operacao = None
+            self.reiniciar = True
+        except Exception:
+            self.display_var.set("Erro")
+            self.reiniciar = True
+
+    def limpar_calc(self):
+        self.display_var.set("0")
+        self.operacao = None
+        self.valor_ant = 0
+        self.reiniciar = False
+
+    # --- ABA REGRA DE TRÊS ---
+    def montar_regra_de_tres(self):
+        frame = tk.Frame(self.tab_r3, bg="#1e293b", padx=20, pady=20)
+        frame.pack(fill="both", expand=True)
+
+        tk.Label(frame, text="Se A vale B, então C vale X:", bg="#1e293b", fg="#94a3b8", font=("Arial", 10)).pack(pady=5)
+
+        row1 = tk.Frame(frame, bg="#1e293b")
+        row1.pack(pady=5)
+        self.in_a = tk.Entry(row1, width=7, font=("Arial", 12), justify="center")
+        self.in_a.pack(side="left", padx=5)
+        tk.Label(row1, text="➔", bg="#1e293b", fg="white", font=("Arial", 12)).pack(side="left")
+        self.in_b = tk.Entry(row1, width=7, font=("Arial", 12), justify="center")
+        self.in_b.pack(side="left", padx=5)
+
+        row2 = tk.Frame(frame, bg="#1e293b")
+        row2.pack(pady=5)
+        self.in_c = tk.Entry(row2, width=7, font=("Arial", 12), justify="center")
+        self.in_c.pack(side="left", padx=5)
+        tk.Label(row2, text="➔", bg="#1e293b", fg="white", font=("Arial", 12)).pack(side="left")
+        tk.Label(row2, text="X", width=6, bg="#0f172a", fg="#10b981", font=("Arial", 12, "bold")).pack(side="left", padx=5)
+
+        self.r3_resultado = tk.Label(frame, text="X = ?", font=("Arial", 16, "bold"), fg="#10b981", bg="#0f172a", pady=10)
+        self.r3_resultado.pack(fill="x", pady=15)
+
+        btn_calc = tk.Button(frame, text="Calcular X", bg="#3b82f6", fg="white", font=("Arial", 11, "bold"), command=self.calcular_regra3)
+        btn_calc.pack(fill="x", pady=5)
+
+    def calcular_regra3(self):
+        try:
+            a = float(self.in_a.get().replace(",", "."))
+            b = float(self.in_b.get().replace(",", "."))
+            c = float(self.in_c.get().replace(",", "."))
+            if a == 0:
+                self.r3_resultado.config(text="Erro: A = 0")
+                return
+            x = (b * c) / a
+            str_x = str(int(x)) if x.is_integer() else f"{x:.4f}".rstrip('0').rstrip('.')
+            self.r3_resultado.config(text=f"X = {str_x.replace('.', ',')}")
+        except ValueError:
+            self.r3_resultado.config(text="Valores inválidos")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = CalculadoraPro(root)
+    root.mainloop()
