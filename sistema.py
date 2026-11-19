@@ -1,0 +1,7 @@
+print ("qual e o seu nome?") 
+nome = input () 
+print ("qual e o seu numero") 
+numero1 = input () 
+print ("qual seu outro numero") 
+outro_numero = input () 
+print ("seu resultado e: " + str(int(numero1) + int(outro_numero)))
